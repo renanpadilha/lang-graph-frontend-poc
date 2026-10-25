@@ -1,0 +1,38 @@
+name: CD (homologação OCI)
+
+# Só roda manualmente ou ao criar uma tag v*, e só se DEPLOY_ENABLED=true
+# (Settings > Secrets and variables > Actions > Variables). Veja README.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+concurrency: deploy-hml
+
+jobs:
+  deploy:
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci && npm run build
+
+      - name: Configurar SSH
+        env:
+          SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+          HOST: ${{ secrets.OCI_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+
+      # O Caddy da VM serve /opt/app/web; nenhum restart é necessário.
+      - name: Publicar dist/
+        env:
+          TARGET: ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}
+        run: rsync -az --delete -e "ssh -i ~/.ssh/id_deploy" dist/ "$TARGET":/opt/app/web/

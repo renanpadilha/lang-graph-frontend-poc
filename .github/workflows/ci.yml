@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Projeto ainda sem scaffold?
+        id: has
+        run: |
+          if [ -f package.json ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; echo "package.json ainda não existe; nada a construir."; fi
+      - uses: actions/setup-node@v4
+        if: steps.has.outputs.ok == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+      # POC sem testes: CI só garante que instala, tipa e gera o bundle.
+      - if: steps.has.outputs.ok == 'true'
+        run: npm ci && npm run build
