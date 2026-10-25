@@ -57,14 +57,24 @@ AG-UI é um protocolo aberto de eventos de agente. Os eventos que importam para 
 
 Resultado: sem protocolo inventado e sem adapter manual de SSE; o painel e o chat usam o mesmo stream.
 
-### 3.3 Riscos e plano B
+### 3.3 Spike do backend: APROVADO (2026-10-24)
 
-- `@assistant-ui/react-ag-ui` está na versão **0.1.0** e o módulo AG-UI do langgraph4j é
-  pouco documentado. Por isso o passo 1 é um **spike de 1 dia**: um grafo mínimo no backend,
-  confirmar que `STEP_*` e `STATE_*` chegam e que a pausa do `interruptBefore` aparece.
-- **Plano B** (se o spike falhar): `useLocalRuntime` com um `ChatModelAdapter` próprio lendo um
-  SSE simples do Spring, usando os mesmos nomes de evento. O resto do app (store, grafo,
-  painel) não muda, porque tudo lê do mesmo `traceStore`.
+Testado com `curl` contra `POST /sse/order` (rota do `AGUISSEController`):
+
+| Verificação | Resultado |
+|---|---|
+| `STEP_STARTED` / `STEP_FINISHED` por nó (`stepName` = nome do nó) | funciona (via `AGUIHook.stepEvents()`) |
+| `STATE_SNAPSHOT` do `OrderState` a cada nó | funciona (emitido por `OrderAgent.onNextEvents`) |
+| Pausa do `interruptBefore("payment")` | o SDK **não** sinaliza sozinho (`outcome: success`); `OrderAgent` emite `outcome: interrupt` com `reason: interrupt_before:payment` |
+| Retomada | segundo `POST` com `resume:[{interruptId, status:"resolved"}]` e o mesmo `threadId` continua `payment → order → fulfillment` e termina em `FULFILLED` |
+| LLM real (DeepSeek) | filtro e escolha funcionando, com justificativa em português |
+
+Ainda **não** emitido pelo backend (próximos passos): `TEXT_MESSAGE_*`, `TOOL_CALL_*`
+(`show_products`, `request_approval`) e `CUSTOM` (chamadas UCP/LLM, decisão de edge).
+
+Riscos que seguem abertos: `@assistant-ui/react-ag-ui` 0.1.0 ainda não foi testado no front;
+cada nó emite 2 a 3 `STATE_SNAPSHOT` (o store deve deduplicar). **Plano B** (adapter próprio
+sobre `useLocalRuntime`) só se o pacote do front falhar no passo 3 da ordem de execução.
 
 ## 4. Grafo visual (React Flow)
 
@@ -139,7 +149,7 @@ ucp-agent-web/
 
 ## 7. Ordem de execução
 
-1. **Spike AG-UI** no backend (grafo mínimo + `AGUISSEController`) e leitura crua dos eventos no front. Decide AG-UI vs plano B.
+1. ~~Spike AG-UI no backend~~ — **feito** (§3.3). Resta ler os eventos no front (passo 3).
 2. Scaffold: Vite + React + TS + Tailwind + proxy `/api` → `localhost:8080`.
 3. `AgentProvider` + `traceStore`; ver os eventos no console antes de qualquer UI.
 4. Chat: thread/composer do assistant-ui, `ProductCards`, `Suggestions`.

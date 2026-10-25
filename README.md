@@ -3,7 +3,7 @@
 Chat de e-commerce (assistant-ui) com painel de depuração em grafo do LangGraph.
 Backend: repositório `lang-graph-ucp-poc`. Plano: [PLANO.md](PLANO.md). POC sem testes automatizados.
 
-Status: só o plano; scaffold do app ainda não foi criado.
+Status: front implementado (`npm install && npm run dev`); espera `/api/agui` e `/api/graph` do backend em `localhost:8080`.
 
 ## CI/CD
 

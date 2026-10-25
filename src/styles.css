@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-serif: "DM Serif Display", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-ink: #111111;
+  --color-paper: #f4f4f5;
+  --color-line: #d4d4d8;
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: linear-gradient(160deg, #e9e9eb 0%, #8a8a8f 50%, #0a0a0a 100%) fixed;
+}
+.btn {
+  background: linear-gradient(90deg, #52525b, #111);
+  color: #fff; border-radius: 9999px; padding: 6px 14px; font-weight: 500; cursor: pointer;
+}
+.btn:disabled { opacity: .5; cursor: default; }
+.btn-ghost { border: 1px solid var(--color-line); border-radius: 9999px; padding: 4px 12px; cursor: pointer; }
+.react-flow__attribution { display: none; }
