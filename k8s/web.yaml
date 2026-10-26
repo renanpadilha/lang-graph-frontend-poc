@@ -39,8 +39,7 @@ metadata:
   name: web
   namespace: apps
   annotations:
-    # staging primeiro; troque por letsencrypt-prod depois de validar
-    cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
   tls:
