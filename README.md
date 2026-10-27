@@ -7,14 +7,16 @@ Status: front implementado (`npm install && npm run dev`); espera `/api/agui` e 
 
 ## CI/CD
 
-- **CI**: a cada push na `main` e PR roda `npm ci && npm run build` (pula enquanto não houver `package.json`).
-- **CD**: manual ou tag `v*`; gera `dist/` e envia por rsync/SSH para `/opt/app/web` na VM da OCI.
-  Fica **desligado** até `DEPLOY_ENABLED=true`.
+- **CI**: a cada push na `main` e PR roda `npm ci && npm run build`.
+- **CD**: a cada push na `main` (ou manual) builda a imagem arm64, publica em
+  `ghcr.io/renanpadilha/lang-graph-frontend-poc` e aplica `k8s/` no cluster da VM da OCI
+  (`kubectl apply -k` + `set image` com o SHA + `rollout status`).
 
-### Ligar o CD
+### Pré-requisitos
 
-Mesmos secrets do backend, em *Settings > Secrets and variables > Actions*:
-`OCI_HOST`, `OCI_USER`, `OCI_SSH_KEY` (chave **de deploy**, só para esta VM) e a variable
-`DEPLOY_ENABLED=true`. Passo a passo da VM e do HTTPS: `PLANO-INFRA.md` no repositório do backend.
+- Secrets em *Settings > Secrets and variables > Actions*: `OCI_HOST`, `OCI_USER`,
+  `OCI_SSH_KEY` (chave **de deploy**, só para esta VM).
+- Pacote do ghcr público (ou `imagePullSecret` no Deployment), senão o cluster não puxa a imagem.
+- Secret `basic-auth-users` criado no namespace `apps` (veja `k8s/auth.yaml`).
 
 Nenhum segredo vai para o front: variáveis `VITE_*` entram no bundle.

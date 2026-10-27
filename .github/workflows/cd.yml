@@ -1,25 +1,45 @@
 name: CD (homologação OCI)
 
-# Só roda manualmente ou ao criar uma tag v*, e só se DEPLOY_ENABLED=true
-# (Settings > Secrets and variables > Actions > Variables). Veja README.
+# A cada push na main: builda a imagem (arm64, a VM da OCI é Ampere), publica no ghcr
+# e aplica k8s/ no cluster da VM. Secrets: OCI_HOST, OCI_USER, OCI_SSH_KEY.
 on:
   workflow_dispatch:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths-ignore: ['**.md']
 
 concurrency: deploy-hml
 
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/renanpadilha/lang-graph-frontend-poc
+
 jobs:
   deploy:
-    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
-          node-version: '22'
-          cache: npm
-      - run: npm ci && npm run build
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
 
       - name: Configurar SSH
         env:
@@ -31,8 +51,15 @@ jobs:
           chmod 600 ~/.ssh/id_deploy
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
 
-      # O Caddy da VM serve /opt/app/web; nenhum restart é necessário.
-      - name: Publicar dist/
+      - name: Aplicar manifests e atualizar imagem
         env:
           TARGET: ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}
-        run: rsync -az --delete -e "ssh -i ~/.ssh/id_deploy" dist/ "$TARGET":/opt/app/web/
+        run: |
+          rsync -az --delete -e "ssh -i ~/.ssh/id_deploy" k8s/ "$TARGET":/opt/app/k8s-web/
+          ssh -i ~/.ssh/id_deploy "$TARGET" bash -s <<EOF
+          set -e
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          sudo --preserve-env=KUBECONFIG kubectl apply -k /opt/app/k8s-web
+          sudo --preserve-env=KUBECONFIG kubectl -n apps set image deploy/web web=${IMAGE}:${GITHUB_SHA}
+          sudo --preserve-env=KUBECONFIG kubectl -n apps rollout status deploy/web --timeout=120s
+          EOF
