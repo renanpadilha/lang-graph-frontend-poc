@@ -1,0 +1,13 @@
+# Basic auth na frente do front e da API (Traefik). O Secret `basic-auth-users`
+# (chave `users`, formato htpasswd) é criado na VM e nunca vai para o git:
+#   kubectl -n apps create secret generic basic-auth-users --from-file=users=<arquivo htpasswd>
+# Para tirar a senha: remova a anotação router.middlewares dos dois Ingress e reaplique.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: basic-auth
+  namespace: apps
+spec:
+  basicAuth:
+    secret: basic-auth-users
+    removeHeader: true
