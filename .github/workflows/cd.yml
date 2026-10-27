@@ -55,7 +55,7 @@ jobs:
         env:
           TARGET: ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}
         run: |
-          rsync -az --delete -e "ssh -i ~/.ssh/id_deploy" k8s/ "$TARGET":/opt/app/k8s-web/
+          tar -C k8s -cz . | ssh -i ~/.ssh/id_deploy "$TARGET" 'mkdir -p /opt/app/k8s-web && find /opt/app/k8s-web -mindepth 1 -delete && tar -xz -C /opt/app/k8s-web'
           ssh -i ~/.ssh/id_deploy "$TARGET" bash -s <<EOF
           set -e
           export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
