@@ -1,25 +1,44 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "DM Sans", system-ui, sans-serif;
-  --font-serif: "DM Serif Display", serif;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --color-ink: #111111;
-  --color-paper: #f4f4f5;
-  --color-line: #d4d4d8;
+  --color-ink: #26241f;
+  --color-paper: #f8f7f4;
+  --color-line: #e8e5df;
+  --color-mute: #8a867e;
+  --color-tint: #f2f0ec;
+  --color-ok: #5f7a68;
+  --color-warn: #a07a2c;
+  --color-bad: #9a4a43;
 }
 
 html, body, #root { height: 100%; }
 body {
   margin: 0;
   font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
   color: var(--color-ink);
-  background: linear-gradient(160deg, #e9e9eb 0%, #8a8a8f 50%, #0a0a0a 100%) fixed;
+  background: #ecebe7;
+  -webkit-font-smoothing: antialiased;
 }
+:focus-visible { outline: 1px solid var(--color-ink); outline-offset: 3px; }
 .btn {
-  background: linear-gradient(90deg, #52525b, #111);
-  color: #fff; border-radius: 9999px; padding: 6px 14px; font-weight: 500; cursor: pointer;
+  background: var(--color-ink); color: #fff; border: 1px solid var(--color-ink);
+  border-radius: 9999px; padding: 7px 20px; font-size: 13.5px; cursor: pointer;
 }
-.btn:disabled { opacity: .5; cursor: default; }
-.btn-ghost { border: 1px solid var(--color-line); border-radius: 9999px; padding: 4px 12px; cursor: pointer; }
+.btn:disabled { opacity: .35; cursor: default; }
+.btn-ghost {
+  border: 1px solid var(--color-line); border-radius: 9999px; padding: 7px 20px; font-size: 13.5px;
+  cursor: pointer; transition: border-color .2s;
+}
+.btn-ghost:hover { border-color: var(--color-ink); }
+.chip {
+  border: 1px solid var(--color-line); border-radius: 9999px; padding: 4px 14px; font-size: 12.5px;
+  color: var(--color-mute); cursor: pointer; transition: color .2s, border-color .2s;
+}
+.chip:hover { color: var(--color-ink); border-color: var(--color-ink); }
 .react-flow__attribution { display: none; }
+@keyframes pulse-dot { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: no-preference) { .pulse-dot { animation: pulse-dot 1.8s ease-in-out infinite; } }
